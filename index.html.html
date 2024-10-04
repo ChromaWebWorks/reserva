@@ -1,0 +1,128 @@
+<html lang="pt-br">
+    <head>
+        <meta charset="UTF-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+        <title>Bar Esperança - Reservas Online em Tempo Real</title>
+        <link href="style.css" rel="stylesheet" type="text/css" />
+        <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
+        <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore-compat.js"></script>
+        <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-analytics-compat.js"></script>
+    </head>
+    <body>
+        <header>
+            <h1>Bar Esperança</h1>
+            <p>Reservas Online em Tempo Real</p>
+        </header>
+
+        <nav>
+            <ul>
+                <li><a href="#fila">Fila de Espera</a></li>
+                <li><a href="#reservas">Reservas</a></li>
+            </ul>
+        </nav>
+
+        <main class="container">
+            <section id="fila">
+                <h2>Fila de Espera</h2>
+                <form id="queueForm">
+                    <label for="name">Nome:</label>
+                    <input type="text" id="name" required />
+
+                    <label for="phone">Telefone:</label>
+                    <input type="tel" id="phone" required />
+
+                    <label for="partySize">Tamanho do grupo:</label>
+                    <input type="number" id="partySize" min="1" max="10" required />
+
+                    <button type="submit">Entrar na Fila</button>
+                </form>
+
+                <div id="queueStatus"></div>
+            </section>
+
+            <section id="reservas">
+                <h2>Reservas</h2>
+                <form id="reservationForm">
+                    <label for="reservationName">Nome:</label>
+                    <input type="text" id="reservationName" required />
+
+                    <label for="reservationPhone">Telefone:</label>
+                    <input type="tel" id="reservationPhone" required />
+
+                    <label for="reservationDate">Data:</label>
+                    <input type="date" id="reservationDate" required />
+
+                    <label for="reservationTime">Horário:</label>
+                    <input type="time" id="reservationTime" required min="10:00" max="19:00" />
+
+                    <label for="reservationPartySize">Tamanho do grupo:</label>
+                    <input type="number" id="reservationPartySize" min="1" max="10" required />
+
+                    <label for="reservationArea">Área:</label>
+                    <select id="reservationArea" required>
+                        <option value="terreo">Térreo</option>
+                        <option value="primeiro_andar">Primeiro Andar</option>
+                    </select>
+
+                    <button type="submit">Fazer Reserva</button>
+                </form>
+
+                <div id="reservationStatus"></div>
+
+                <div class="reservation-info">
+                    <p><strong>Observações importantes sobre reservas:</strong></p>
+                    <ul>
+                        <li>Reservas são possíveis apenas de terça a quinta-feira.</li>
+                        <li>São feitas no máximo 5 reservas por dia.</li>
+                        <li>Tolerância de chegada até às 19h, caso contrário a mesa é desfeita.</li>
+                        <li>Não fazemos reservas durante o dia.</li>
+                    </ul>
+                </div>
+            </section>
+
+            <section id="queueScreen" class="hidden">
+                <h2>Sua Posição na Fila</h2>
+                <div id="queuePosition" class="pulse"></div>
+                <div id="estimatedTime" class="hidden"></div>
+                <div id="turnMessage" class="hidden"></div>
+                <button id="leaveQueue">Sair da Fila</button>
+                <button id="shareQueuePosition">Receber via WhatsApp</button>
+            </section>
+
+            <section id="reservationConfirmation" class="hidden">
+                <h2>Confirmação de Reserva</h2>
+                <div id="reservationDetails"></div>
+                <button id="sendWhatsApp">Receber via WhatsApp</button>
+                <button id="backToHome">Voltar para a Página Inicial</button>
+            </section>
+        </main>
+
+        <div id="feedbackBox" class="collapsed">
+            <button id="feedbackToggle">Feedback</button>
+            <div id="feedbackContent" class="hidden">
+                <h3>Deixe seu feedback</h3>
+                <form id="feedbackForm">
+                    <label for="feedbackName">Nome:</label>
+                    <input type="text" id="feedbackName" required />
+
+                    <label for="feedbackRating">Avaliação:</label>
+                    <div id="ratingStars">
+                        <span class="star" data-rating="1">☆</span>
+                        <span class="star" data-rating="2">☆</span>
+                        <span class="star" data-rating="3">☆</span>
+                        <span class="star" data-rating="4">☆</span>
+                        <span class="star" data-rating="5">☆</span>
+                    </div>
+                    <input type="hidden" id="feedbackRating" required />
+
+                    <label for="feedbackText">Comentário:</label>
+                    <textarea id="feedbackText" placeholder="Digite seu comentário aqui" required></textarea>
+                    <button type="submit">Enviar Feedback</button>
+                </form>
+                <div id="feedbackStatus"></div>
+            </div>
+        </div>
+
+        <script src="script.js"></script>
+    </body>
+</html>
