@@ -1,128 +1,879 @@
 <html lang="pt-br">
     <head>
-        <meta charset="UTF-8" />
-        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-        <title>Bar Esperança - Reservas Online em Tempo Real</title>
-        <link href="style.css" rel="stylesheet" type="text/css" />
-        <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
-        <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore-compat.js"></script>
-        <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-analytics-compat.js"></script>
-    </head>
-    <body>
-        <header>
-            <h1>Bar Esperança</h1>
-            <p>Reservas Online em Tempo Real</p>
-        </header>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Bar Esperança - Reservas Online em Tempo Real</title>
+<style>
+  :root {
+    --primary-color: #1c7c54;
+    --secondary-color: #f9a825;
+    --background-color: #f5f5f5;
+    --text-color: #333;
+  }
 
-        <nav>
-            <ul>
-                <li><a href="#fila">Fila de Espera</a></li>
-                <li><a href="#reservas">Reservas</a></li>
-            </ul>
-        </nav>
+  * {
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
+  }
 
-        <main class="container">
-            <section id="fila">
-                <h2>Fila de Espera</h2>
-                <form id="queueForm">
-                    <label for="name">Nome:</label>
-                    <input type="text" id="name" required />
+  body {
+    font-family: 'Roboto', sans-serif;
+    line-height: 1.6;
+    color: var(--text-color);
+    background-color: var(--background-color);
+  }
 
-                    <label for="phone">Telefone:</label>
-                    <input type="tel" id="phone" required />
+  .container {
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 20px;
+  }
 
-                    <label for="partySize">Tamanho do grupo:</label>
-                    <input type="number" id="partySize" min="1" max="10" required />
+  header {
+    background-color: var(--primary-color);
+    color: white;
+    text-align: center;
+    padding: 20px 0;
+  }
 
-                    <button type="submit">Entrar na Fila</button>
-                </form>
+  h1 {
+    font-size: 2.5rem;
+    margin-bottom: 10px;
+  }
 
-                <div id="queueStatus"></div>
-            </section>
+  nav {
+    background-color: var(--secondary-color);
+    padding: 10px 0;
+  }
 
-            <section id="reservas">
-                <h2>Reservas</h2>
-                <form id="reservationForm">
-                    <label for="reservationName">Nome:</label>
-                    <input type="text" id="reservationName" required />
+  nav ul {
+    list-style-type: none;
+    display: flex;
+    justify-content: center;
+  }
 
-                    <label for="reservationPhone">Telefone:</label>
-                    <input type="tel" id="reservationPhone" required />
+  nav ul li {
+    margin: 0 15px;
+  }
 
-                    <label for="reservationDate">Data:</label>
-                    <input type="date" id="reservationDate" required />
+  nav ul li a {
+    color: var(--text-color);
+    text-decoration: none;
+    font-weight: bold;
+  }
 
-                    <label for="reservationTime">Horário:</label>
-                    <input type="time" id="reservationTime" required min="10:00" max="19:00" />
+  main {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: space-between;
+    margin-top: 30px;
+  }
 
-                    <label for="reservationPartySize">Tamanho do grupo:</label>
-                    <input type="number" id="reservationPartySize" min="1" max="10" required />
+  section {
+    background-color: white;
+    border-radius: 8px;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+    padding: 20px;
+    margin-bottom: 30px;
+    width: 100%;
+  }
 
-                    <label for="reservationArea">Área:</label>
-                    <select id="reservationArea" required>
-                        <option value="terreo">Térreo</option>
-                        <option value="primeiro_andar">Primeiro Andar</option>
-                    </select>
+  @media (min-width: 768px) {
+    section {
+      width: calc(50% - 15px);
+    }
+  }
 
-                    <button type="submit">Fazer Reserva</button>
-                </form>
+  h2 {
+    color: var(--primary-color);
+    margin-bottom: 20px;
+  }
 
-                <div id="reservationStatus"></div>
+  form {
+    display: flex;
+    flex-direction: column;
+    max-width: 400px;
+    margin: 0 auto;
+  }
 
-                <div class="reservation-info">
-                    <p><strong>Observações importantes sobre reservas:</strong></p>
-                    <ul>
-                        <li>Reservas são possíveis apenas de terça a quinta-feira.</li>
-                        <li>São feitas no máximo 5 reservas por dia.</li>
-                        <li>Tolerância de chegada até às 19h, caso contrário a mesa é desfeita.</li>
-                        <li>Não fazemos reservas durante o dia.</li>
-                    </ul>
-                </div>
-            </section>
+  label {
+    margin-bottom: 5px;
+    font-weight: bold;
+  }
 
-            <section id="queueScreen" class="hidden">
-                <h2>Sua Posição na Fila</h2>
-                <div id="queuePosition" class="pulse"></div>
-                <div id="estimatedTime" class="hidden"></div>
-                <div id="turnMessage" class="hidden"></div>
-                <button id="leaveQueue">Sair da Fila</button>
-                <button id="shareQueuePosition">Receber via WhatsApp</button>
-            </section>
+  input, select {
+    padding: 10px;
+    margin-bottom: 15px;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+    font-size: 16px;
+  }
 
-            <section id="reservationConfirmation" class="hidden">
-                <h2>Confirmação de Reserva</h2>
-                <div id="reservationDetails"></div>
-                <button id="sendWhatsApp">Receber via WhatsApp</button>
-                <button id="backToHome">Voltar para a Página Inicial</button>
-            </section>
-        </main>
+  button {
+    background-color: var(--primary-color);
+    color: white;
+    border: none;
+    padding: 12px 20px;
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 1rem;
+    transition: background-color 0.3s ease;
+  }
 
-        <div id="feedbackBox" class="collapsed">
-            <button id="feedbackToggle">Feedback</button>
-            <div id="feedbackContent" class="hidden">
-                <h3>Deixe seu feedback</h3>
-                <form id="feedbackForm">
-                    <label for="feedbackName">Nome:</label>
-                    <input type="text" id="feedbackName" required />
+  button:hover {
+    background-color: #145a3f;
+  }
 
-                    <label for="feedbackRating">Avaliação:</label>
-                    <div id="ratingStars">
-                        <span class="star" data-rating="1">☆</span>
-                        <span class="star" data-rating="2">☆</span>
-                        <span class="star" data-rating="3">☆</span>
-                        <span class="star" data-rating="4">☆</span>
-                        <span class="star" data-rating="5">☆</span>
-                    </div>
-                    <input type="hidden" id="feedbackRating" required />
+  #queueStatus, #reservationStatus {
+    margin-top: 20px;
+    padding: 15px;
+    border-radius: 4px;
+    font-weight: bold;
+    text-align: center;
+  }
 
-                    <label for="feedbackText">Comentário:</label>
-                    <textarea id="feedbackText" placeholder="Digite seu comentário aqui" required></textarea>
-                    <button type="submit">Enviar Feedback</button>
-                </form>
-                <div id="feedbackStatus"></div>
-            </div>
+  .success {
+    background-color: #d4edda;
+    color: #155724;
+  }
+
+  .error {
+    background-color: #f8d7da;
+    color: #721c24;
+  }
+
+  #queuePosition {
+    font-size: 3rem;
+    color: var(--primary-color);
+    text-align: center;
+    margin: 20px 0;
+  }
+
+  @keyframes pulse {
+    0% {
+      transform: scale(1);
+    }
+    50% {
+      transform: scale(1.05);
+    }
+    100% {
+      transform: scale(1);
+    }
+  }
+
+  .pulse {
+    animation: pulse 2s infinite;
+  }
+
+  .hidden {
+    display: none;
+  }
+
+  #queueScreen, #reservationConfirmation {
+    text-align: center;
+    padding: 40px;
+  }
+
+  #estimatedTime {
+    font-size: 1.5rem;
+    margin-top: 20px;
+  }
+
+  #leaveQueue {
+    margin-top: 30px;
+    background-color: #dc3545;
+  }
+
+  #leaveQueue:hover {
+    background-color: #c82333;
+  }
+
+  #reservationDetails {
+    background-color: #e9ecef;
+    border-radius: 8px;
+    padding: 20px;
+    margin-top: 20px;
+    text-align: left;
+  }
+
+  #reservationDetails p {
+    margin-bottom: 10px;
+  }
+
+  #sendWhatsApp {
+    background-color: #25d366;
+    margin-top: 20px;
+  }
+
+  #sendWhatsApp:hover {
+    background-color: #128c7e;
+  }
+
+  #turnMessage {
+    font-size: 1.2rem;
+    color: var(--primary-color);
+    font-weight: bold;
+    margin-top: 20px;
+    padding: 15px;
+    background-color: var(--secondary-color);
+    border-radius: 8px;
+  }
+
+  #feedbackBox {
+    position: fixed;
+    bottom: 20px;
+    right: 20px;
+    z-index: 1000;
+  }
+
+  #feedbackBox.collapsed {
+    width: auto;
+  }
+
+  #feedbackBox:not(.collapsed) {
+    width: 300px;
+    background-color: white;
+    border: 1px solid var(--primary-color);
+    border-radius: 8px;
+    padding: 15px;
+    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+  }
+
+  #feedbackToggle {
+    background-color: var(--primary-color);
+    color: white;
+    border: none;
+    padding: 10px 15px;
+    border-radius: 4px;
+    cursor: pointer;
+  }
+
+  #feedbackContent {
+    margin-top: 10px;
+  }
+
+  #feedbackContent.hidden {
+    display: none;
+  }
+
+  #feedbackForm {
+    display: flex;
+    flex-direction: column;
+  }
+
+  #feedbackName, #feedbackText {
+    margin-bottom: 10px;
+  }
+
+  #feedbackText {
+    resize: vertical;
+    min-height: 100px;
+  }
+
+  #ratingStars {
+    display: flex;
+    justify-content: center;
+    margin-bottom: 10px;
+  }
+
+  .star {
+    font-size: 24px;
+    color: #ccc;
+    cursor: pointer;
+    transition: color 0.2s;
+  }
+
+  .star.active {
+    color: #ffd700;
+  }
+
+  #feedbackStatus {
+    margin-top: 10px;
+    font-weight: bold;
+  }
+
+  .reservation-info {
+    background-color: #e9ecef;
+    border-radius: 8px;
+    padding: 15px;
+    margin-bottom: 20px;
+  }
+
+  .reservation-info ul {
+    margin-top: 10px;
+    padding-left: 20px;
+  }
+
+  .reservation-info li {
+    margin-bottom: 5px;
+  }
+</style>
+<script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-analytics-compat.js"></script>
+<script src="https://www.googletagmanager.com/gtag/js?l=dataLayer&amp;id=G-YBVNRCFNNZ" async=""></script></head>
+<body>
+  <header>
+    <h1>Bar Esperança</h1>
+    <p>Reservas Online em Tempo Real</p>
+  </header>
+  
+  <nav>
+    <ul>
+      <li><a href="#fila">Fila de Espera</a></li>
+      <li><a href="#reservas">Reservas</a></li>
+    </ul>
+  </nav>
+  
+  <main class="container">
+    <section id="fila">
+      <h2>Fila de Espera</h2>
+      <form id="queueForm" style="display: block;">
+        <label for="name">Nome:</label>
+        <input type="text" id="name" required="">
+        
+        <label for="phone">Telefone:</label>
+        <input type="tel" id="phone" required="">
+        
+        <label for="partySize">Tamanho do grupo:</label>
+        <input type="number" id="partySize" min="1" max="10" required="">
+        
+        <button type="submit">Entrar na Fila</button>
+      </form>
+      
+      <div id="queueStatus"></div>
+    </section>
+    
+    <section id="reservas">
+      <h2>Reservas</h2>
+      <div class="reservation-info">
+        <p><strong>Observações importantes sobre reservas:</strong></p>
+        <ul>
+          <li>Reservas são possíveis apenas de terça a quinta-feira.</li>
+          <li>São feitas no máximo 5 reservas por dia.</li>
+          <li>Tolerância de chegada até às 19h, caso contrário a mesa é desfeita.</li>
+          <li>Não fazemos reservas durante o dia.</li>
+        </ul>
+      </div>
+      <form id="reservationForm">
+        <label for="reservationName">Nome:</label>
+        <input type="text" id="reservationName" required="">
+        
+        <label for="reservationPhone">Telefone:</label>
+        <input type="tel" id="reservationPhone" required="">
+        
+        <label for="reservationDate">Data:</label>
+        <input type="date" id="reservationDate" required="">
+        
+        <label for="reservationTime">Horário:</label>
+        <input type="time" id="reservationTime" required="" min="10:00" max="19:00">
+        
+        <label for="reservationPartySize">Tamanho do grupo:</label>
+        <input type="number" id="reservationPartySize" min="1" max="10" required="">
+        
+        <label for="reservationArea">Área:</label>
+        <select id="reservationArea" required="">
+          <option value="terreo">Térreo</option>
+          <option value="primeiro_andar">Primeiro Andar</option>
+        </select>
+        
+        <button type="submit">Fazer Reserva</button>
+      </form>
+      
+      <div id="reservationStatus"></div>
+    </section>
+    
+    <section id="queueScreen" class="hidden">
+      <h2>Sua Posição na Fila</h2>
+      <div id="queuePosition" class="pulse"></div>
+      <div id="estimatedTime" class="hidden"></div>
+      <div id="turnMessage" class="hidden"></div>
+      <button id="leaveQueue">Sair da Fila</button>
+    </section>
+    
+    <section id="reservationConfirmation" class="hidden">
+      <h2>Confirmação de Reserva</h2>
+      <div id="reservationDetails"></div>
+      <button id="sendWhatsApp">Receber via WhatsApp</button>
+      <button id="backToHome">Voltar para a Página Inicial</button>
+    </section>
+  </main>
+
+  <div id="feedbackBox" class="collapsed">
+    <button id="feedbackToggle">Feedback</button>
+    <div id="feedbackContent" class="hidden">
+      <h3>Deixe seu feedback</h3>
+      <form id="feedbackForm">
+        <label for="feedbackName">Nome:</label>
+        <input type="text" id="feedbackName" required="">
+        
+        <label for="feedbackRating">Avaliação:</label>
+        <div id="ratingStars">
+          <span class="star" data-rating="1">☆</span>
+          <span class="star" data-rating="2">☆</span>
+          <span class="star" data-rating="3">☆</span>
+          <span class="star" data-rating="4">☆</span>
+          <span class="star" data-rating="5">☆</span>
         </div>
+        <input type="hidden" id="feedbackRating" required="">
+        
+        <label for="feedbackText">Comentário:</label>
+        <textarea id="feedbackText" placeholder="Digite seu comentário aqui" required=""></textarea>
+        <button type="submit">Enviar Feedback</button>
+      </form>
+      <div id="feedbackStatus"></div>
+    </div>
+  </div>
 
-        <script type="module" src="script.js"></script>
-    </body>
-</html>
+  <script>
+    const firebaseConfig = {
+      apiKey: "AIzaSyACMK8-XbLmdRAEVUx3prQO7HxFRjaeHP4",
+      authDomain: "baresperanca-cca31.firebaseapp.com",
+      projectId: "baresperanca-cca31",
+      storageBucket: "baresperanca-cca31.appspot.com",
+      messagingSenderId: "320253941927",
+      appId: "1:320253941927:web:6ec1be91f1342da3caa382",
+      measurementId: "G-YBVNRCFNNZ"
+    };
+
+    firebase.initializeApp(firebaseConfig);
+    firebase.analytics();
+    const db = firebase.firestore();
+
+    let countdownInterval;
+    let confirmationButtonAdded = false;
+
+    function getExpirationDate() {
+      const date = new Date();
+      date.setHours(date.getHours() + 24);
+      return date;
+    }
+
+    function cleanupExpiredEntries() {
+      const now = new Date();
+
+      db.collection('queue').where('expirationDate', '<=', now).get().then((snapshot) => {
+        snapshot.forEach((doc) => {
+          doc.ref.delete();
+        });
+      });
+
+      db.collection('reservations').where('expirationDate', '<=', now).get().then((snapshot) => {
+        snapshot.forEach((doc) => {
+          doc.ref.delete();
+        });
+      });
+    }
+
+    function checkQueueStatus() {
+      return db.collection('settings').doc('queueStatus').get().then((doc) => {
+        if (doc.exists) {
+          return doc.data().active;
+        } else {
+          console.log("No such document!");
+          return false;
+        }
+      }).catch((error) => {
+        console.log("Error getting document:", error);
+        return false;
+      });
+    }
+
+    function updateQueue() {
+      const userId = localStorage.getItem('userId');
+      if (!userId) {
+        document.getElementById('queueScreen').classList.add('hidden');
+        document.getElementById('fila').classList.remove('hidden');
+        document.getElementById('reservas').classList.remove('hidden');
+        return;
+      }
+
+      db.collection('queue').doc(userId).get().then((doc) => {
+        if (doc.exists) {
+          const userData = doc.data();
+          const queuePosition = document.getElementById('queuePosition');
+          const estimatedTime = document.getElementById('estimatedTime');
+          const turnMessage = document.getElementById('turnMessage');
+
+          document.getElementById('queueScreen').classList.remove('hidden');
+          document.getElementById('fila').classList.add('hidden');
+          document.getElementById('reservas').classList.add('hidden');
+
+          if (userData.position === 0) {
+            queuePosition.textContent = 'Sua vez chegou!';
+            turnMessage.textContent = 'Sua vez chegou! Por favor, compareça à mesa em até 3 minutos.';
+            turnMessage.classList.remove('hidden');
+            estimatedTime.classList.remove('hidden');
+
+            if (userData.turnStarted) {
+              startCountdown(userId);
+            } else {
+              handleUserTurn(userId);
+            }
+
+            if (!confirmationButtonAdded) {
+              const confirmButton = document.createElement('button');
+              confirmButton.textContent = 'Confirmar Chegada';
+              confirmButton.onclick = () => {
+                removeFromQueue(userId);
+              };
+              document.getElementById('queueScreen').appendChild(confirmButton);
+              confirmationButtonAdded = true;
+            }
+          } else {
+            estimatedTime.classList.add('hidden');
+            if (confirmationButtonAdded) {
+              const confirmButton = document.querySelector('#queueScreen button');
+              if (confirmButton) {
+                confirmButton.remove();
+              }
+              confirmationButtonAdded = false;
+            }
+
+            if (userData.position === 1) {
+              queuePosition.textContent = '1º';
+              turnMessage.textContent = 'Você é o próximo! Aguarde ser chamado para comparecer.';
+              turnMessage.classList.remove('hidden');
+            } else {
+              queuePosition.textContent = `${userData.position}º`;
+              const estimatedMinutes = (userData.position - 1) * 5;
+              turnMessage.textContent = `Tempo estimado de espera: ${estimatedMinutes} minutos`;
+              turnMessage.classList.remove('hidden');
+            }
+          }
+        } else {
+          document.getElementById('queueScreen').classList.add('hidden');
+          document.getElementById('fila').classList.remove('hidden');
+          document.getElementById('reservas').classList.remove('hidden');
+          localStorage.removeItem('userId');
+        }
+      });
+    }
+
+    function removeFromQueue(userId) {
+      db.collection('queue').doc(userId).delete().then(() => {
+        localStorage.removeItem('userId');
+        document.getElementById('queueScreen').classList.add('hidden');
+        document.getElementById('fila').classList.remove('hidden');
+        document.getElementById('reservas').classList.remove('hidden');
+        alert('Obrigado por ter esperado para frequentar o nosso Bar Esperança! Seja bem-vindo e aproveite sua visita!');
+      }).catch((error) => {
+        console.error("Error removing document: ", error);
+      });
+    }
+
+    function handleUserTurn(docId) {
+      const queuePosition = document.getElementById('queuePosition');
+      const estimatedTime = document.getElementById('estimatedTime');
+      const turnMessage = document.getElementById('turnMessage');
+
+      queuePosition.textContent = 'Sua vez chegou!';
+      estimatedTime.textContent = 'Você tem 3 minutos para comparecer à mesa.';
+      turnMessage.textContent = 'Sua vez chegou! Por favor, compareça à mesa em até 3 minutos.';
+      turnMessage.classList.remove('hidden');
+
+      db.collection('queue').doc(docId).update({
+        turnStarted: firebase.firestore.FieldValue.serverTimestamp()
+      }).then(() => {
+        startCountdown(docId);
+      });
+    }
+
+    function startCountdown(docId) {
+      db.collection('queue').doc(docId).get().then((doc) => {
+        if (doc.exists && doc.data().turnStarted) {
+          const turnStarted = doc.data().turnStarted.toDate();
+          const now = new Date();
+          let timeLeft = 180 - Math.floor((now - turnStarted) / 1000);
+
+          if (timeLeft > 0) {
+            const estimatedTime = document.getElementById('estimatedTime');
+
+            clearInterval(countdownInterval);
+            countdownInterval = setInterval(() => {
+              timeLeft--;
+              estimatedTime.textContent = `Tempo restante: ${Math.floor(timeLeft / 60)}:${(timeLeft % 60).toString().padStart(2, '0')}`;
+
+              if (timeLeft <= 0) {
+                clearInterval(countdownInterval);
+                removeFromQueue(docId);
+                alert('O tempo para comparecer à mesa expirou. Você foi removido da fila.');
+              }
+            }, 1000);
+          } else {
+            removeFromQueue(docId);
+            alert('O tempo para comparecer à mesa expirou. Você foi removido da fila.');
+          }
+        }
+      });
+    }
+
+    setInterval(updateQueue, 5000);
+    
+    document.getElementById('queueForm').addEventListener('submit', function(e) {
+      e.preventDefault();
+      
+      checkQueueStatus().then((isActive) => {
+        if (!isActive) {
+          showStatus('queueStatus', 'A fila ainda não está disponível. Há lugares vagos no bar.', 'info');
+          return;
+        }
+        
+        const name = document.getElementById('name').value;
+        const phone = document.getElementById('phone').value;
+        const partySize = parseInt(document.getElementById('partySize').value);
+        
+        db.collection('queue').orderBy('position', 'desc').limit(1).get().then((snapshot) => {
+          let newPosition = 1;
+          if (!snapshot.empty) {
+            newPosition = snapshot.docs[0].data().position + 1;
+          }
+          
+          return db.collection('queue').add({
+            name,
+            phone,
+            partySize,
+            position: newPosition,
+            timestamp: firebase.firestore.FieldValue.serverTimestamp(),
+            expirationDate: getExpirationDate(),
+            id: Date.now().toString()
+          });
+        }).then((docRef) => {
+          localStorage.setItem('userPhone', phone);
+          localStorage.setItem('userId', docRef.id);
+          showStatus('queueStatus', 'Você foi adicionado à fila com sucesso!', 'success');
+          
+          document.getElementById('fila').classList.add('hidden');
+          document.getElementById('reservas').classList.add('hidden');
+          document.getElementById('queueScreen').classList.remove('hidden');
+          
+          updateQueue();
+        }).catch((error) => {
+          showStatus('queueStatus', 'Erro ao entrar na fila. Tente novamente.', 'error');
+        });
+      });
+    });
+    
+    document.getElementById('leaveQueue').addEventListener('click', function() {
+      const userId = localStorage.getItem('userId');
+      
+      db.collection('queue').doc(userId).get().then((doc) => {
+        if (doc.exists) {
+          doc.ref.delete().then(() => {
+            localStorage.removeItem('userId');
+
+            document.getElementById('queueScreen').classList.add('hidden');
+            document.getElementById('fila').classList.remove('hidden');
+            document.getElementById('reservas').classList.remove('hidden');
+
+            showStatus('queueStatus', 'Você saiu da fila com sucesso.', 'success');
+          }).catch((error) => {
+            showStatus('queueStatus', 'Erro ao sair da fila. Tente novamente.', 'error');
+          });
+        }
+      });
+    });
+
+    document.getElementById('reservationForm').addEventListener('submit', function(e) {
+      e.preventDefault();
+      
+      const name = document.getElementById('reservationName').value;
+      const phone = document.getElementById('reservationPhone').value;
+      const date = document.getElementById('reservationDate').value;
+      const time = document.getElementById('reservationTime').value;
+      const partySize = parseInt(document.getElementById('reservationPartySize').value);
+      const area = document.getElementById('reservationArea').value;
+      
+      const reservationDate = new Date(date);
+      const dayOfWeek = reservationDate.getDay();
+      
+      if (dayOfWeek < 2 || dayOfWeek > 4) {
+        showStatus('reservationStatus', 'Desculpe, as reservas só são permitidas de terça a quinta-feira.', 'error');
+        return;
+      }
+      
+      if (partySize > 6 && area !== 'terreo') {
+        showStatus('reservationStatus', 'Grupos maiores que 6 pessoas só podem reservar no térreo.', 'error');
+        return;
+      }
+      
+      const selectedTime = new Date(`2000-01-01T${time}`);
+      const minTime = new Date(`2000-01-01T19:00`);
+      if (selectedTime > minTime) {
+        showStatus('reservationStatus', 'O horário máximo para reservas é 19:00.', 'error');
+        return;
+      }
+      
+      db.collection('reservations').where('date', '==', date).get().then((snapshot) => {
+        if (snapshot.size >= 5) {
+          showStatus('reservationStatus', 'Desculpe, o limite de reservas para este dia foi atingido.', 'error');
+        } else {
+          db.collection('reservations').add({
+            name,
+            phone,
+            date,
+            time,
+            partySize,
+            area,
+            timestamp: firebase.firestore.FieldValue.serverTimestamp(),
+            expirationDate: getExpirationDate()
+          }).then(() => {
+            showReservationConfirmation({ name, phone, date, time, partySize, area });
+          }).catch((error) => {
+            showStatus('reservationStatus', 'Erro ao fazer a reserva. Tente novamente.', 'error');
+          });
+        }
+      });
+    });
+
+    function showStatus(elementId, message, type) {
+      const statusElement = document.getElementById(elementId);
+      statusElement.textContent = message;
+      statusElement.className = type;
+    }
+
+    function showReservationConfirmation(reservation) {
+      const confirmationSection = document.getElementById('reservationConfirmation');
+      const detailsDiv = document.getElementById('reservationDetails');
+      
+      detailsDiv.innerHTML = `
+        <p><strong>Nome:</strong> ${reservation.name}</p>
+        <p><strong>Telefone:</strong> ${reservation.phone}</p>
+        <p><strong>Data:</strong> ${reservation.date}</p>
+        <p><strong>Horário:</strong> ${reservation.time}</p>
+        <p><strong>Tamanho do grupo:</strong> ${reservation.partySize}</p>
+        <p><strong>Área:</strong> ${reservation.area === 'terreo' ? 'Térreo' : 'Primeiro Andar'}</p>
+        <p><strong>Status:</strong> Confirmada</p>
+      `;
+      
+      document.getElementById('fila').classList.add('hidden');
+      document.getElementById('reservas').classList.add('hidden');
+      confirmationSection.classList.remove('hidden');
+    }
+
+    document.getElementById('sendWhatsApp').addEventListener('click', function() {
+      alert('Um link com os detalhes da sua reserva foi enviado para o seu WhatsApp.');
+    });
+
+    document.getElementById('backToHome').addEventListener('click', function() {
+      document.getElementById('reservationConfirmation').classList.add('hidden');
+      document.getElementById('fila').classList.remove('hidden');
+      document.getElementById('reservas').classList.remove('hidden');
+
+      document.getElementById('reservationForm').reset();
+    });
+
+    setInterval(cleanupExpiredEntries, 60 * 60 * 1000);
+    
+    document.addEventListener('DOMContentLoaded', function() {
+      checkQueueStatus().then((isActive) => {
+        const queueForm = document.getElementById('queueForm');
+        const queueStatusMessage = document.createElement('p');
+        queueStatusMessage.id = 'queueStatusMessage';
+        
+        if (!isActive) {
+          queueForm.style.display = 'none';
+          queueStatusMessage.textContent = 'A fila ainda não está disponível. Há lugares vagos no bar.';
+          queueStatusMessage.style.color = 'var(--primary-color)';
+          queueStatusMessage.style.fontWeight = 'bold';
+          document.getElementById('fila').insertBefore(queueStatusMessage, queueForm);
+        } else {
+          queueForm.style.display = 'block';
+          if (document.getElementById('queueStatusMessage')) {
+            document.getElementById('queueStatusMessage').remove();
+          }
+        }
+      });
+
+      updateQueue();
+      cleanupExpiredEntries();
+      startQueueStatusCheck();
+      
+      const feedbackBox = document.getElementById('feedbackBox');
+      const feedbackToggle = document.getElementById('feedbackToggle');
+      const feedbackContent = document.getElementById('feedbackContent');
+      const ratingStars = document.querySelectorAll('.star');
+      const feedbackRating = document.getElementById('feedbackRating');
+
+      feedbackToggle.addEventListener('click', function() {
+        feedbackBox.classList.toggle('collapsed');
+        feedbackContent.classList.toggle('hidden');
+      });
+
+      ratingStars.forEach(star => {
+        star.addEventListener('click', function() {
+          const rating = this.getAttribute('data-rating');
+          feedbackRating.value = rating;
+          ratingStars.forEach(s => {
+            s.classList.toggle('active', s.getAttribute('data-rating') <= rating);
+          });
+        });
+      });
+
+      document.getElementById('feedbackForm').addEventListener('submit', function(e) {
+        e.preventDefault();
+        
+        const name = document.getElementById('feedbackName').value;
+        const rating = feedbackRating.value;
+        const feedbackText = document.getElementById('feedbackText').value;
+        const feedbackStatus = document.getElementById('feedbackStatus');
+        
+        if (containsOffensiveWords(feedbackText)) {
+          feedbackStatus.textContent = 'Por favor, evite usar linguagem ofensiva.';
+          feedbackStatus.style.color = 'red';
+          return;
+        }
+        
+        db.collection('feedback').add({
+          name: name,
+          rating: parseInt(rating),
+          text: feedbackText,
+          timestamp: firebase.firestore.FieldValue.serverTimestamp()
+        }).then(() => {
+          feedbackStatus.textContent = 'Feedback enviado com sucesso!';
+          feedbackStatus.style.color = 'green';
+          document.getElementById('feedbackName').value = '';
+          document.getElementById('feedbackText').value = '';
+          feedbackRating.value = '';
+          ratingStars.forEach(s => s.classList.remove('active'));
+        }).catch((error) => {
+          feedbackStatus.textContent = 'Erro ao enviar feedback. Tente novamente.';
+          feedbackStatus.style.color = 'red';
+        });
+      });
+    });
+
+    function startQueueStatusCheck() {
+      setInterval(() => {
+        checkQueueStatus().then((isActive) => {
+          const queueForm = document.getElementById('queueForm');
+          const queueStatusMessage = document.getElementById('queueStatusMessage') || document.createElement('p');
+          queueStatusMessage.id = 'queueStatusMessage';
+          
+          if (!isActive) {
+            queueForm.style.display = 'none';
+            queueStatusMessage.textContent = 'A fila ainda não está disponível. Há lugares vagos no bar.';
+            queueStatusMessage.style.color = 'var(--primary-color)';
+            queueStatusMessage.style.fontWeight = 'bold';
+            if (!document.getElementById('queueStatusMessage')) {
+              document.getElementById('fila').insertBefore(queueStatusMessage, queueForm);
+            }
+          } else {
+            queueForm.style.display = 'block';
+            if (document.getElementById('queueStatusMessage')) {
+              document.getElementById('queueStatusMessage').remove();
+            }
+          }
+        });
+      }, 60000);
+    }
+
+    const offensiveWords = ['palavrao1', 'palavrao2', 'palavrao3'];
+
+    function containsOffensiveWords(text) {
+      return offensiveWords.some(word => text.toLowerCase().includes(word));
+    }
+  </script>
+
+</body></html>
