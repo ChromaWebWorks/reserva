@@ -294,10 +294,10 @@
   }
 
   .reservation-info {
+    margin-top: 30px;
     background-color: #e9ecef;
     border-radius: 8px;
-    padding: 15px;
-    margin-bottom: 20px;
+    padding: 20px;
   }
 
   .reservation-info ul {
@@ -329,7 +329,7 @@
   <main class="container">
     <section id="fila">
       <h2>Fila de Espera</h2>
-      <form id="queueForm" style="display: block;">
+      <form id="queueForm">
         <label for="name">Nome:</label>
         <input type="text" id="name" required="">
         
@@ -347,15 +347,6 @@
     
     <section id="reservas">
       <h2>Reservas</h2>
-      <div class="reservation-info">
-        <p><strong>Observações importantes sobre reservas:</strong></p>
-        <ul>
-          <li>Reservas são possíveis apenas de terça a quinta-feira.</li>
-          <li>São feitas no máximo 5 reservas por dia.</li>
-          <li>Tolerância de chegada até às 19h, caso contrário a mesa é desfeita.</li>
-          <li>Não fazemos reservas durante o dia.</li>
-        </ul>
-      </div>
       <form id="reservationForm">
         <label for="reservationName">Nome:</label>
         <input type="text" id="reservationName" required="">
@@ -382,6 +373,16 @@
       </form>
       
       <div id="reservationStatus"></div>
+      
+      <div class="reservation-info">
+        <p><strong>Observações importantes sobre reservas:</strong></p>
+        <ul>
+          <li>Reservas são possíveis apenas de terça a quinta-feira.</li>
+          <li>São feitas no máximo 5 reservas por dia.</li>
+          <li>Tolerância de chegada até às 19h, caso contrário a mesa é desfeita.</li>
+          <li>Não fazemos reservas durante o dia.</li>
+        </ul>
+      </div>
     </section>
     
     <section id="queueScreen" class="hidden">
@@ -390,6 +391,7 @@
       <div id="estimatedTime" class="hidden"></div>
       <div id="turnMessage" class="hidden"></div>
       <button id="leaveQueue">Sair da Fila</button>
+      <button id="shareQueuePosition">Receber via WhatsApp</button>
     </section>
     
     <section id="reservationConfirmation" class="hidden">
@@ -428,7 +430,7 @@
 
   <script>
     const firebaseConfig = {
-      apiKey: "AIzaSyACMK8-XbLmdRAEVUx3prQO7HxFRjaeHP4",
+      apiKey: "",
       authDomain: "baresperanca-cca31.firebaseapp.com",
       projectId: "baresperanca-cca31",
       storageBucket: "baresperanca-cca31.appspot.com",
@@ -549,6 +551,11 @@
           localStorage.removeItem('userId');
         }
       });
+    }
+
+    function generateQueueMessage(position) {
+      const message = `Olá! Você está na fila do Bar Esperança. Sua posição atual é ${position}. Acompanhe sua posição aqui: ${window.location.href}`;
+      return encodeURIComponent(message);
     }
 
     function removeFromQueue(userId) {
@@ -727,6 +734,19 @@
       });
     });
 
+    function generateReservationMessage(reservation) {
+      const message = `Olá ${reservation.name}! Aqui estão os detalhes da sua reserva no Bar Esperança:\n
+Data: ${reservation.date}
+Horário: ${reservation.time}
+Tamanho do grupo: ${reservation.partySize}
+Área: ${reservation.area === 'terreo' ? 'Térreo' : 'Primeiro Andar'}
+
+Lembre-se: A tolerância de chegada é até às 19h. Após esse horário, a mesa será desfeita.
+
+Agradecemos sua preferência e esperamos vê-lo em breve!`;
+      return encodeURIComponent(message);
+    }
+
     function showStatus(elementId, message, type) {
       const statusElement = document.getElementById(elementId);
       statusElement.textContent = message;
@@ -747,45 +767,40 @@
         <p><strong>Status:</strong> Confirmada</p>
       `;
       
+      // Store the reservation details in localStorage
+      localStorage.setItem('lastReservation', JSON.stringify(reservation));
+      
       document.getElementById('fila').classList.add('hidden');
       document.getElementById('reservas').classList.add('hidden');
       confirmationSection.classList.remove('hidden');
     }
 
-    document.getElementById('sendWhatsApp').addEventListener('click', function() {
-      alert('Um link com os detalhes da sua reserva foi enviado para o seu WhatsApp.');
-    });
-
-    document.getElementById('backToHome').addEventListener('click', function() {
-      document.getElementById('reservationConfirmation').classList.add('hidden');
-      document.getElementById('fila').classList.remove('hidden');
-      document.getElementById('reservas').classList.remove('hidden');
-
-      document.getElementById('reservationForm').reset();
-    });
-
-    setInterval(cleanupExpiredEntries, 60 * 60 * 1000);
-    
     document.addEventListener('DOMContentLoaded', function() {
-      checkQueueStatus().then((isActive) => {
-        const queueForm = document.getElementById('queueForm');
-        const queueStatusMessage = document.createElement('p');
-        queueStatusMessage.id = 'queueStatusMessage';
-        
-        if (!isActive) {
-          queueForm.style.display = 'none';
-          queueStatusMessage.textContent = 'A fila ainda não está disponível. Há lugares vagos no bar.';
-          queueStatusMessage.style.color = 'var(--primary-color)';
-          queueStatusMessage.style.fontWeight = 'bold';
-          document.getElementById('fila').insertBefore(queueStatusMessage, queueForm);
-        } else {
-          queueForm.style.display = 'block';
-          if (document.getElementById('queueStatusMessage')) {
-            document.getElementById('queueStatusMessage').remove();
-          }
+      const shareQueuePositionBtn = document.getElementById('shareQueuePosition');
+      shareQueuePositionBtn.addEventListener('click', function() {
+        const userId = localStorage.getItem('userId');
+        const userPhone = localStorage.getItem('userPhone');
+        if (userId && userPhone) {
+          db.collection('queue').doc(userId).get().then((doc) => {
+            if (doc.exists) {
+              const position = doc.data().position;
+              const message = generateQueueMessage(position);
+              window.open(`https://wa.me/${userPhone}?text=${message}`, '_blank');
+            }
+          });
         }
       });
 
+      const sendWhatsAppBtn = document.getElementById('sendWhatsApp');
+      sendWhatsAppBtn.addEventListener('click', function() {
+        const reservationDetails = JSON.parse(localStorage.getItem('lastReservation'));
+        if (reservationDetails) {
+          const message = generateReservationMessage(reservationDetails);
+          window.open(`https://wa.me/${reservationDetails.phone}?text=${message}`, '_blank');
+        }
+      });
+
+      // Existing code...
       updateQueue();
       cleanupExpiredEntries();
       startQueueStatusCheck();
